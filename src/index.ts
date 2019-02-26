@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Connection, Packet, PacketWriter } from "mcproto"
 import { createServer, connect } from "net"
 

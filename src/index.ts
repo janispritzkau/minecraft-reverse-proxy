@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Connection, Packet, PacketWriter } from "mcproto"
+import { Connection, Packet, PacketWriter, PacketReader } from "mcproto"
 import { createServer, connect } from "net"
 
 const servers: {[key: string]: { host: string, port: number }} = {}
@@ -20,10 +20,13 @@ createServer(async serverSocket => {
 
     const remoteAddress = serverSocket.remoteAddress!.replace("::ffff:", "")
 
-    server.onPacket = packet => packets.push(packet)
     let packet = await server.nextPacket
-    const host = (packet.readVarInt(), packet.readString())
-    const nextState = (packet.readUInt16(), packet.readVarInt())
+    server.onPacket = packet => packets.push(packet)
+
+    const protocol = packet.readVarInt()
+    const host = packet.readString()
+    const port = packet.readUInt16()
+    const nextState = packet.readVarInt()
 
     const addr = servers[host]
 
@@ -48,6 +51,10 @@ createServer(async serverSocket => {
 
     const clientSocket = connect({ host: addr.host, port: addr.port }, () => {
         const client = new Connection(clientSocket)
+
+        client.send(new PacketWriter(0x0).writeVarInt(protocol)
+        .writeString(addr.host).writeUInt16(addr.port).writeVarInt(nextState))
+
         for (let packet of packets) client.send(packet)
         server.stop(), client.stop()
 

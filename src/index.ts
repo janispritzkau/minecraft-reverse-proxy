@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Connection, Packet, PacketWriter, PacketReader } from "mcproto"
+import { Connection, Packet, PacketWriter, PacketReader, State } from "mcproto"
 import { createServer, connect } from "net"
 
 const servers: {[key: string]: { host: string, port: number }} = {}
@@ -16,60 +16,43 @@ process.argv.slice(2).forEach(arg => {
 createServer(async serverSocket => {
     serverSocket.on("error", _err => {})
     const server = new Connection(serverSocket, { isServer: true })
-    const packets: Packet[] = []
 
-    const remoteAddress = serverSocket.remoteAddress!.replace("::ffff:", "")
+    const handshake = await server.nextPacket()
+    const protocol = handshake.readVarInt(), address = handshake.readString()
+    const packet = server.nextPacket()
 
-    let packet = await server.nextPacket
-    server.onPacket = packet => packets.push(packet)
-
-    const protocol = packet.readVarInt()
-    const host = packet.readString()
-    const port = packet.readUInt16()
-    const nextState = packet.readVarInt()
-
-    const addr = servers[host]
-
-    if (!addr) {
+    if (!(address in servers)) {
         const msg = { text: "Please use a valid address to connect!", color: "red" }
-        if (nextState == 1) {
+        if (server.state == State.Status) {
             server.send(new PacketWriter(0x0).writeJSON({
                 version: { name: "Proxy", protocol: -1 },
                 players: { max: -1, online: -1 },
                 description: msg
             }))
+
             server.onPacket = packet => {
                 if (packet.id == 0x1) server.send(new PacketWriter(0x1).write(packet.read(8)))
             }
-        } else if (nextState == 2) {
+        } else if (server.state == State.Play) {
             server.send(new PacketWriter(0x0).writeJSON(msg))
             serverSocket.end()
         }
-        setTimeout(() => serverSocket.end(), 1000)
-        return log(remoteAddress, host, nextState, "INVALID_HOST")
+        return setTimeout(() => serverSocket.end(), 1000)
     }
 
-    const clientSocket = connect({ host: addr.host, port: addr.port }, () => {
+    const { host, port } = servers[address]
+    const clientSocket = connect({ host, port }, async () => {
         const client = new Connection(clientSocket)
 
         client.send(new PacketWriter(0x0).writeVarInt(protocol)
-        .writeString(addr.host).writeUInt16(addr.port).writeVarInt(nextState))
+        .writeString(host).writeUInt16(port).writeVarInt(server.state))
+        client.send(await packet)
 
-        for (let packet of packets) client.send(packet)
-        server.stop(), client.stop()
-
-        log(remoteAddress, host, nextState, "CONNECT")
+        server.destroy(), client.destroy()
         serverSocket.pipe(clientSocket), clientSocket.pipe(serverSocket)
     })
 
-    clientSocket.on("error", (err: any) => {
-        if (!clientSocket.writable) log(remoteAddress, host, nextState, err.code)
-    })
+    clientSocket.on("error", _err => {})
     clientSocket.on("close", () => serverSocket.end())
     serverSocket.on("close", () => clientSocket.end())
 }).listen(25565)
-
-function log(remoteAddress: string, host: string, state: number, code: string) {
-    const date = new Date
-    console.log(`${date.toISOString()} ${remoteAddress} ${host} ${state} ${code}`)
-}

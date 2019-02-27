@@ -25,6 +25,6 @@
     "typescript": "^3.3.3333"
   },
   "dependencies": {
-    "mcproto": "^0.3.1"
+    "mcproto": "^0.4.0"
   }
 }

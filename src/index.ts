@@ -2,16 +2,26 @@
 import { Connection, Packet, PacketWriter, PacketReader, State } from "mcproto"
 import { createServer, connect } from "net"
 
-const servers: {[key: string]: { host: string, port: number }} = {}
+let port = 25565
+const servers: Map<string, { host: string, port: number }> = new Map
 
-process.argv.slice(2).forEach(arg => {
-    const parts = arg.split(":")
-    const remoteHost = parts.shift()!
-    servers[remoteHost] = {
-        host: parts.length > 1 ? parts[0] : "localhost",
-        port: parts.length > 1 ? +parts[1] : +parts[0]
+let isPortOpt = false
+for (const arg of process.argv.slice(2)) {
+    if (arg.startsWith("-p")) isPortOpt = true
+    else if (isPortOpt) {
+        isPortOpt = false
+        port = parseInt(arg)
+    } else {
+        const [local, remote] = arg.split("=")
+        const [host, port] = remote.split(":")
+        if (!local) continue
+
+        servers.set(local.trim(), {
+            host: host.trim() || "127.0.0.1",
+            port: parseInt(port) || 25565
+        })
     }
-})
+}
 
 createServer(async serverSocket => {
     serverSocket.on("error", _err => {})
@@ -21,7 +31,8 @@ createServer(async serverSocket => {
     const protocol = handshake.readVarInt(), address = handshake.readString()
     const packet = server.nextPacket()
 
-    if (!(address in servers)) {
+    const serverAddr = servers.get(address)
+    if (!serverAddr) {
         const msg = { text: "Please use a valid address to connect!", color: "red" }
         if (server.state == State.Status) {
             server.send(new PacketWriter(0x0).writeJSON({
@@ -40,7 +51,7 @@ createServer(async serverSocket => {
         return setTimeout(() => serverSocket.end(), 1000)
     }
 
-    const { host, port } = servers[address]
+    const { host, port } = serverAddr
     const clientSocket = connect({ host, port }, async () => {
         const client = new Connection(clientSocket)
 
@@ -55,4 +66,10 @@ createServer(async serverSocket => {
     clientSocket.on("error", _err => {})
     clientSocket.on("close", () => serverSocket.end())
     serverSocket.on("close", () => clientSocket.end())
-}).listen(25565)
+}).listen(port)
+
+console.log("Server listening on port " + port)
+
+servers.forEach(({ host, port }, localAddr) => {
+    console.log(`  - ${localAddr} -> ${host}:${port}`)
+})

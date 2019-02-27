@@ -5,16 +5,15 @@ A simple reverse proxy which can run multiple minecraft servers on the same IP.
 ## Usage
 
 ```sh
-mcrevproxy <address>:<local-port>
-# or
-mcrevproxy <address>:<local-address>:<local-port>
+mcrevproxy -p <server-port> <address>=<host>:<port> ...
 ```
 
 ### Example
 
 ```
-mcrevproxy mc.example.com:25566 play.example.com:25567
+mcrevproxy 1.localhost=:25566 2.localhost=192.168.2.100
 ```
 
-If a client connected to the reverse proxy via `mc.example.com`, they will
-be redirected to `localhost:25566`. Same for `play.example.com -> localhost:25567`.
+If a client connects via `1.localhost`, they will be redirected to the local
+address `127.0.0.1:25566`. Similar for `2.localhost`, it will redirect the
+client to the network address `192.168.2.100:25565`.

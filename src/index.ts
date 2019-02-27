@@ -27,9 +27,17 @@ createServer(async serverSocket => {
     serverSocket.on("error", _err => {})
     const server = new Connection(serverSocket, { isServer: true })
 
+    const remoteAddr = serverSocket.remoteAddress!.replace("::ffff:", "")
+
     const handshake = await server.nextPacket()
     const protocol = handshake.readVarInt(), address = handshake.readString()
     const packet = server.nextPacket()
+
+    const log = (code: string, text = "") => {
+        const isoDate = new Date().toISOString()
+        if (text) text = " - " + text
+        console.log(`${isoDate} ${code} ${remoteAddr} ${address}` + text)
+    }
 
     const serverAddr = servers.get(address)
     if (!serverAddr) {
@@ -48,12 +56,15 @@ createServer(async serverSocket => {
             server.send(new PacketWriter(0x0).writeJSON(msg))
             serverSocket.end()
         }
+        log("BAD_ADDR")
         return setTimeout(() => serverSocket.end(), 1000)
     }
+
 
     const { host, port } = serverAddr
     const clientSocket = connect({ host, port }, async () => {
         const client = new Connection(clientSocket)
+        log("CONNECT")
 
         client.send(new PacketWriter(0x0).writeVarInt(protocol)
         .writeString(host).writeUInt16(port).writeVarInt(server.state))
@@ -63,7 +74,11 @@ createServer(async serverSocket => {
         serverSocket.pipe(clientSocket), clientSocket.pipe(serverSocket)
     })
 
-    clientSocket.on("error", _err => {})
+    clientSocket.on("error", error => {
+        if (clientSocket.destroyed) {
+            log("ERROR", error.message)
+        }
+    })
     clientSocket.on("close", () => serverSocket.end())
     serverSocket.on("close", () => clientSocket.end())
 }).listen(port)
@@ -73,3 +88,5 @@ console.log("Server listening on port " + port)
 servers.forEach(({ host, port }, localAddr) => {
     console.log(`  - ${localAddr} -> ${host}:${port}`)
 })
+
+console.log()

@@ -1,6 +1,8 @@
 # Minecraft Reverse Proxy
 
-A simple reverse proxy which can run multiple minecraft servers on the same IP.
+A small reverse proxy which can run multiple minecraft servers on the same IP.
+It works by reading the `host` of the handshake packet and mapping it to
+a different address. It supports basic logging to the terminal.
 
 ## Usage
 
@@ -10,7 +12,7 @@ mcrevproxy -p <server-port> <address>=<host>:<port> ...
 
 ### Example
 
-```
+```sh
 mcrevproxy 1.localhost=:25566 2.localhost=192.168.2.100
 ```
 

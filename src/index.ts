@@ -52,7 +52,7 @@ createServer(async serverSocket => {
             server.onPacket = packet => {
                 if (packet.id == 0x1) server.send(new PacketWriter(0x1).write(packet.read(8)))
             }
-        } else if (server.state == State.Play) {
+        } else if (server.state == State.Login) {
             server.send(new PacketWriter(0x0).writeJSON(msg))
             serverSocket.end()
         }

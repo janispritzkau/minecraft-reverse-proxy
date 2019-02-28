@@ -31,7 +31,8 @@ createServer(async serverSocket => {
 
     const handshake = await server.nextPacket()
     const protocol = handshake.readVarInt(), address = handshake.readString()
-    const packet = server.nextPacket()
+
+    server.pause()
 
     const log = (code: string, text = "") => {
         const isoDate = new Date().toISOString()
@@ -43,15 +44,15 @@ createServer(async serverSocket => {
     if (!serverAddr) {
         const msg = { text: "Please use a valid address to connect!", color: "red" }
         if (server.state == State.Status) {
-            server.send(new PacketWriter(0x0).writeJSON({
-                version: { name: "Proxy", protocol: -1 },
-                players: { max: -1, online: -1 },
-                description: msg
-            }))
-
             server.onPacket = packet => {
+                if (packet.id == 0x0) server.send(new PacketWriter(0x0).writeJSON({
+                    version: { name: "Proxy", protocol: -1 },
+                    players: { max: -1, online: -1 },
+                    description: msg
+                }))
                 if (packet.id == 0x1) server.send(new PacketWriter(0x1).write(packet.read(8)))
             }
+            server.resume()
         } else if (server.state == State.Login) {
             server.send(new PacketWriter(0x0).writeJSON(msg))
             serverSocket.end()
@@ -60,7 +61,6 @@ createServer(async serverSocket => {
         return setTimeout(() => serverSocket.end(), 1000)
     }
 
-
     const { host, port } = serverAddr
     const clientSocket = connect({ host, port }, async () => {
         const client = new Connection(clientSocket)
@@ -68,7 +68,9 @@ createServer(async serverSocket => {
 
         client.send(new PacketWriter(0x0).writeVarInt(protocol)
         .writeString(host).writeUInt16(port).writeVarInt(server.state))
-        client.send(await packet)
+
+        server.onPacket = packet => client.send(packet)
+        server.resume()
 
         server.destroy(), client.destroy()
         serverSocket.pipe(clientSocket), clientSocket.pipe(serverSocket)

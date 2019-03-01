@@ -1,6 +1,6 @@
 {
   "name": "mcrevproxy",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Reverse proxy for minecraft servers",
   "repository": {
     "type": "git",

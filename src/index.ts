@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Connection, Packet, PacketWriter, PacketReader, State } from "mcproto"
+import { Connection, PacketWriter, State } from "mcproto"
 import { createServer, connect } from "net"
 
 let port = 25565
@@ -41,6 +41,7 @@ createServer(async serverSocket => {
     }
 
     const serverAddr = servers.get(address)
+
     if (!serverAddr) {
         const msg = { text: "Please use a valid address to connect!", color: "red" }
         if (server.state == State.Status) {
@@ -57,11 +58,12 @@ createServer(async serverSocket => {
             server.send(new PacketWriter(0x0).writeJSON(msg))
             serverSocket.end()
         }
-        log("BAD_ADDR")
-        return setTimeout(() => serverSocket.end(), 1000)
+
+        return log("BAD_ADDR")
     }
 
     const { host, port } = serverAddr
+
     const clientSocket = connect({ host, port }, async () => {
         const client = new Connection(clientSocket)
         log("CONNECT")

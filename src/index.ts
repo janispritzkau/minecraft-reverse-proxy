@@ -30,7 +30,8 @@ createServer(async serverSocket => {
     const remoteAddr = serverSocket.remoteAddress!.replace("::ffff:", "")
 
     const handshake = await server.nextPacket()
-    const protocol = handshake.readVarInt(), address = handshake.readString()
+    const protocol = handshake.readVarInt()
+    const address = handshake.readString().split("\x00")[0]
 
     server.pause()
 

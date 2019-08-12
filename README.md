@@ -1,8 +1,10 @@
 # Minecraft Reverse Proxy
 
+[![npm](https://img.shields.io/npm/v/mcrevproxy)](https://www.npmjs.com/package/mcrevproxy)
+
 A small reverse proxy which can run multiple minecraft servers on the same IP.
-It works by reading the `host` of the handshake packet and mapping it to
-a different address. It supports basic logging to the terminal.
+It works by reading the hostname of the handshake packet and mapping it to
+a different address. It has basic logging to the terminal.
 
 ## Usage
 
@@ -13,9 +15,9 @@ mcrevproxy -p <server-port> <address>=<host>:<port> ...
 ### Example
 
 ```sh
-mcrevproxy 1.localhost=:25566 2.localhost=192.168.2.100
+mcrevproxy server1.localhost=:25566 server2.localhost=192.168.2.100
 ```
 
-If a client connects via `1.localhost`, they will be redirected to the local
-address `127.0.0.1:25566`. Similar for `2.localhost`, it will redirect the
-client to the network address `192.168.2.100:25565`.
+Assuming that `*.localhost` does resolve to `127.0.0.1`, clients that connect to
+`server1.localhost` will be forwarded to `127.0.0.1:25566`, and connections to
+`server2.localhost` will be forwarded to `192.168.2.100:25565`.

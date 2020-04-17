@@ -58,9 +58,9 @@ new Server(async client => {
 
     client.on("error", error => log("ERROR", error))
     client.pause()
-    
+
     const { host, port } = serverAddr
-    
+
     let conn: Client
     try {
         conn = await Client.connect(host, port)
@@ -69,7 +69,7 @@ new Server(async client => {
         return client.end()
     }
     conn.on("error", error => log("ERROR", error))
-    
+
     log("CONNECT")
 
     conn.send(new PacketWriter(0x0).writeVarInt(protocol)
@@ -79,7 +79,7 @@ new Server(async client => {
     client.on("packet", packet => conn.send(packet))
     client.resume()
 
-    client.unpipe(), client.unpipe()
+    client.unpipe(), conn.unpipe()
 
     client.socket.pipe(conn.socket, { end: true })
     conn.socket.pipe(client.socket, { end: true })

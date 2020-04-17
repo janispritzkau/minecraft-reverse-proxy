@@ -1,6 +1,6 @@
 {
   "name": "mcrevproxy",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Reverse proxy for Minecraft servers",
   "author": "Janis Pritzkau <janispritzkau@gmail.com>",
   "license": "MIT",
@@ -21,10 +21,10 @@
   },
   "bin": "./lib/index.js",
   "dependencies": {
-    "mcproto": "^0.7.12"
+    "mcproto": "^0.7.13"
   },
   "devDependencies": {
-    "@types/node": "^12.12.27",
-    "typescript": "^3.7.5"
+    "@types/node": "^12.12.35",
+    "typescript": "^3.8.3"
   }
 }

@@ -53,7 +53,7 @@ new Server(async client => {
         }
 
         log("BAD_ADDR")
-        return setTimeout(() => conn.end(), 1000)
+        return setTimeout(() => client.end(), 1000)
     }
 
     client.on("error", error => log("ERROR", error))

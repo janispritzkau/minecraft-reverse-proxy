@@ -1,6 +1,6 @@
 {
   "name": "mcrevproxy",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Reverse proxy for Minecraft servers",
   "author": "Janis Pritzkau <janispritzkau@gmail.com>",
   "license": "MIT",

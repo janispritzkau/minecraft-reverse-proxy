@@ -76,6 +76,9 @@ new Server(async client => {
         .writeString(host).writeUInt16(port)
         .writeVarInt(client.state))
 
+    if (client.state === State.Status)
+        server.send(new PacketWriter(0x0));
+
     client.on("packet", packet => conn.send(packet))
     client.resume()
 
